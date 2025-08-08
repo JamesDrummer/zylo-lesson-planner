@@ -1,0 +1,119 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { approveLessonPlans, loadLessonPlans, refineLessonPlans } from "@/lib/api";
+
+export default function Step4LessonReview({
+  value,
+  onChange,
+  onBack,
+  onNext,
+}: {
+  value: string | null;
+  onChange: (plan: string) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [changes, setChanges] = useState("");
+
+  useEffect(() => {
+    const run = async () => {
+      if (value) return; // already generated
+      setLoading(true);
+      setError(null);
+      try {
+        const p = await loadLessonPlans();
+        onChange(p);
+      } catch {
+        setError("Failed to generate plan. Try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-blue">Lesson Plan Review</h2>
+        <p className="text-sm text-zylo-gray mt-1">Review the generated lesson plan before downloading.</p>
+      </div>
+
+      {loading && <p className="text-sm text-zylo-gray">Generating plan...</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {value && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="glass rounded-2xl p-4">
+            <h3 className="font-semibold text-zylo-green mb-2">Generated Lesson Plan</h3>
+            <div className="rounded-xl border border-black/10 bg-white p-3 overflow-auto max-h-[70vh] prose prose-zinc">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
+            </div>
+          </div>
+          <div className="glass rounded-2xl p-4">
+            <h3 className="font-semibold text-zylo-blue mb-2">Request Changes</h3>
+            <textarea
+              className="textarea"
+              rows={16}
+              value={changes}
+              onChange={(e) => setChanges(e.target.value)}
+              placeholder="Describe adjustments you want..."
+            />
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <button
+                className="btn-outline"
+                onClick={() => setChanges("")}
+              >
+                Clear
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const refined = await refineLessonPlans({ changes });
+                    onChange(refined);
+                    setChanges("");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Request Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <button className="btn-outline" onClick={onBack}>Back</button>
+        <div className="flex items-center gap-2">
+          <button
+            className="btn-primary"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await approveLessonPlans();
+                onNext();
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={!value}
+          >
+            Generate Final Materials
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+

@@ -1,0 +1,22 @@
+{
+  "app": "zylo-lesson-planner",
+  "repo": "git@github.com:your-org/zylo-lesson-planner.git",
+  "branch": "master",
+  "dockerfile": "Dockerfile",
+  "context": ".",
+  "port": 3000,
+  "domains": [
+    "lessonplanner.brightonhovedrumlessons.uk"
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_API_BASE_URL": "https://myn8n.brightonhovedrumlessons.uk",
+    "NEXT_PUBLIC_APP_URL": "https://lessonplanner.brightonhovedrumlessons.uk"
+  },
+  "ssl": {
+    "enabled": true
+  },
+  "deployOnPush": true
+}
+
+

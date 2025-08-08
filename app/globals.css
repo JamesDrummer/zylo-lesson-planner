@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Zylo Brand Colors */
+  --zylo-pink: #E91E63;
+  --zylo-green: #4CAF50;
+  --zylo-blue: #2196F3;
+  --zylo-yellow: #FFC107;
+  --zylo-gray: #666666;
 }
 
 @theme inline {
@@ -10,6 +16,13 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Expose Zylo brand colors to Tailwind color utilities */
+  --color-zylo-pink: var(--zylo-pink);
+  --color-zylo-green: var(--zylo-green);
+  --color-zylo-blue: var(--zylo-blue);
+  --color-zylo-yellow: var(--zylo-yellow);
+  --color-zylo-gray: var(--zylo-gray);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,7 +33,48 @@
 }
 
 body {
-  background: var(--background);
+  /* Use background-color so gradient backgrounds from Tailwind are not overridden */
+  background-color: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Fun, playful UI helpers (plain CSS so it works even if Tailwind isn't processing) */
+.glass {
+  background-color: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.card {
+  border-radius: 16px;
+  padding: 16px;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+
+.btn-primary, .btn-secondary, .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  font-weight: 600;
+  line-height: 1;
+  transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+.btn-primary { background: var(--zylo-blue); color: #fff; box-shadow: 0 2px 6px rgba(33,150,243,.25); }
+.btn-primary:hover { background: color-mix(in srgb, var(--zylo-blue) 90%, #000); }
+.btn-secondary { background: var(--zylo-pink); color: #fff; box-shadow: 0 2px 6px rgba(233,30,99,.25); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--zylo-pink) 90%, #000); }
+.btn-outline { background: transparent; color: var(--zylo-gray); border: 1px solid color-mix(in srgb, var(--zylo-gray) 30%, #fff); }
+.btn-outline:hover { background: rgba(0,0,0,0.05); }
+
+/* Form primitives */
+.label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--zylo-gray); }
+.input, .textarea {
+  width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);
+  background: rgba(255,255,255,0.9); color: #111; padding: 8px 12px; outline: none;
+}
+.input:focus, .textarea:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--zylo-blue) 25%, transparent); }
+.textarea { min-height: 120px; }

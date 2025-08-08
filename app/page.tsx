@@ -1,103 +1,121 @@
-import Image from "next/image";
+"use client";
+
+import { useMemo, useState } from "react";
+import StepIndicator from "@/components/StepIndicator";
+import Step1LessonDetails from "@/components/steps/Step1LessonDetails";
+import Step2SongSelection from "@/components/steps/Step2SongSelection";
+import Step3ActivitySelection from "@/components/steps/Step3ActivitySelection";
+import Step4LessonReview from "@/components/steps/Step4LessonReview";
+import Step5FinalDownload from "@/components/steps/Step5FinalDownload";
+import type { Activity, LessonDetailsForm, Song } from "@/types";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const steps = useMemo(
+    () => [
+      { key: 1, label: "Lesson Details" },
+      { key: 2, label: "Song Selection" },
+      { key: 3, label: "Activity Selection" },
+      { key: 4, label: "Lesson Review" },
+      { key: 5, label: "Final Download" },
+    ],
+    []
+  );
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [lessonDetails, setLessonDetails] = useState<LessonDetailsForm>(() => ({
+    lessonsToGenerate: 6,
+    firstLessonDate: "",
+    school: "",
+    groupSize: 25,
+    concept1: "",
+    concept2: "",
+    concept3: "",
+    concept4: "",
+    concept5: "",
+    skipDate1: "",
+    skipDate2: "",
+    skipDate3: "",
+  }));
+  const [selectedSong, setSelectedSong] = useState<Song | null>(() => null);
+  const [selectedWarmup, setSelectedWarmup] = useState<Activity | null>(() => null);
+  const [selectedGame, setSelectedGame] = useState<Activity | null>(() => null);
+  const [plan, setPlan] = useState<string | null>(() => null);
+
+  const goNext = () => setCurrentStep((s) => Math.min(steps.length, s + 1));
+  const goBack = () => setCurrentStep((s) => Math.max(1, s - 1));
+
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      <header className="text-center">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zylo-blue">
+          Zylo Lesson Planner
+        </h1>
+        <p className="mt-2 text-sm sm:text-base text-zylo-gray">
+          Plan engaging music lessons with songs and activities.
+        </p>
+      </header>
+
+      <div className="card">
+        <StepIndicator
+          currentStep={currentStep}
+          steps={steps}
+          onStepClick={(idx) => setCurrentStep(idx)}
+        />
+      </div>
+
+      <main className="card overflow-hidden">
+        {currentStep === 1 && (
+          <Step1LessonDetails
+            value={lessonDetails}
+            onChange={setLessonDetails}
+            onNext={() => {
+              setPlan(null);
+              goNext();
+            }}
+          />
+        )}
+        {currentStep === 2 && (
+          <Step2SongSelection
+            selectedSong={selectedSong}
+            onChange={(song) => {
+              setSelectedSong(song);
+              setPlan(null);
+            }}
+            onBack={goBack}
+            onNext={goNext}
+          />
+        )}
+        {currentStep === 3 && (
+          <Step3ActivitySelection
+            selectedWarmup={selectedWarmup}
+            selectedGame={selectedGame}
+            onChange={({ warmup, game }) => {
+              setSelectedWarmup(warmup);
+              setSelectedGame(game ?? null);
+              setPlan(null);
+            }}
+            onBack={goBack}
+            onNext={goNext}
+          />
+        )}
+        {currentStep === 4 && (
+          <Step4LessonReview
+            value={plan}
+            onChange={setPlan}
+            onBack={goBack}
+            onNext={goNext}
+          />
+        )}
+        {currentStep === 5 && (
+          <Step5FinalDownload onBack={goBack} onRestart={() => {
+            setCurrentStep(1);
+            setSelectedSong(null);
+            setSelectedWarmup(null);
+            setSelectedGame(null);
+            setPlan(null);
+          }} />
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
