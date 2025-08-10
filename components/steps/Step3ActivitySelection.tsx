@@ -18,21 +18,18 @@ export default function Step3ActivitySelection({
   onNext: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Removed unused loading state to satisfy lint rules
   const [results, setResults] = useState<Activity[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
-      setLoading(true);
       setError(null);
       try {
         const acts = await loadActivities();
         setResults(acts);
       } catch {
         setError("Failed to load activities.");
-      } finally {
-        setLoading(false);
       }
     };
     run();
@@ -183,12 +180,10 @@ export default function Step3ActivitySelection({
           className="btn-primary"
           disabled={!selectedWarmup}
           onClick={async () => {
-            setLoading(true);
             try {
               await selectActivities({ warmupId: selectedWarmup!.id, gameId: selectedGame?.id });
               onNext();
             } finally {
-              setLoading(false);
             }
           }}
         >

@@ -31,6 +31,17 @@ function ensureResumeUrl(): void {
   }
 }
 
+type ResumeResponseWithUrl = { resumeUrl: string };
+
+function hasResumeUrl(value: unknown): value is ResumeResponseWithUrl {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "resumeUrl" in value &&
+    typeof (value as { resumeUrl: unknown }).resumeUrl === "string"
+  );
+}
+
 async function postResume<T>(payload: unknown): Promise<T> {
   ensureResumeUrl();
   const url = `/api/resume?url=${encodeURIComponent(currentResumeUrl!)}`;
@@ -39,9 +50,7 @@ async function postResume<T>(payload: unknown): Promise<T> {
     body: JSON.stringify(payload),
   });
   // Optionally update resumeUrl if backend returns a new one
-  if ((data as any)?.resumeUrl && typeof (data as any).resumeUrl === "string") {
-    currentResumeUrl = (data as any).resumeUrl as string;
-  }
+  if (hasResumeUrl(data)) currentResumeUrl = data.resumeUrl;
   return data;
 }
 

@@ -16,21 +16,18 @@ export default function Step2SongSelection({
   onNext: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Removed unused loading state to satisfy lint rules
   const [results, setResults] = useState<Song[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
-      setLoading(true);
       setError(null);
       try {
         const songs = await loadSongs();
         setResults(songs);
       } catch {
         setError("Failed to load songs.");
-      } finally {
-        setLoading(false);
       }
     };
     run();
@@ -103,12 +100,10 @@ export default function Step2SongSelection({
                   className="btn-secondary w-full"
                   onClick={async () => {
                     onChange(song);
-                    setLoading(true);
                     try {
                       await selectSong(song.id);
                       onNext();
                     } finally {
-                      setLoading(false);
                     }
                   }}
                 >

@@ -19,14 +19,15 @@ export async function POST(request: Request) {
   if (contentType) headers.set("content-type", contentType);
   if (authorization) headers.set("authorization", authorization);
 
-  const body = method !== "GET" && method !== "HEAD" ? (request.body as any) : undefined;
+  const streamBody: ReadableStream<Uint8Array> | null | undefined =
+    method !== "GET" && method !== "HEAD" ? request.body : undefined;
 
   const upstreamResponse = await fetch(resumeUrl, {
     method: "POST",
     headers,
-    body,
+    body: streamBody ?? undefined,
     // @ts-expect-error Node streaming option
-    ...(body ? { duplex: "half" } : {}),
+    ...(streamBody ? { duplex: "half" } : {}),
     redirect: "manual",
   });
 
