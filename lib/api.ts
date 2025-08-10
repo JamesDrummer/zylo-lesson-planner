@@ -1,18 +1,9 @@
 import type { Activity, DownloadsPayload, LessonDetailsForm, Song } from "@/types";
 
-const API_ENDPOINTS = {
-  STEP1_SUBMIT: "https://myn8n.brightonhovedrumlessons.uk/webhook/lesson-details",
-  STEP2_LOAD_SONGS: "https://myn8n.brightonhovedrumlessons.uk/webhook/get-songs",
-  STEP2_SELECT_SONG: "https://myn8n.brightonhovedrumlessons.uk/webhook/select-song",
-  STEP3_LOAD_ACTIVITIES: "https://myn8n.brightonhovedrumlessons.uk/webhook/get-activities",
-  STEP3_SELECT_ACTIVITIES: "https://myn8n.brightonhovedrumlessons.uk/webhook/select-activities",
-  STEP4_LOAD_PLANS: "https://myn8n.brightonhovedrumlessons.uk/webhook/get-lesson-plans",
-  STEP4_REFINE: "https://myn8n.brightonhovedrumlessons.uk/webhook/refine-plans",
-  STEP4_APPROVE: "https://myn8n.brightonhovedrumlessons.uk/webhook/approve-plans",
-  STEP5_GET_DOWNLOADS: "https://myn8n.brightonhovedrumlessons.uk/webhook/get-downloads",
-} as const;
+// Wait/Resume architecture: start once -> receive resumeUrl -> resume with JSON at each step
+let currentResumeUrl: string | null = null;
 
-const DEFAULT_RETRY = { retries: 2, backoffMs: 500 };
+const DEFAULT_RETRY = { retries: 2, backoffMs: 500 } as const;
 
 async function fetchJson<T>(url: string, init?: RequestInit, retry = DEFAULT_RETRY): Promise<T> {
   let lastError: unknown;
@@ -34,15 +25,40 @@ async function fetchJson<T>(url: string, init?: RequestInit, retry = DEFAULT_RET
   throw lastError instanceof Error ? lastError : new Error("Request failed");
 }
 
+function ensureResumeUrl(): void {
+  if (!currentResumeUrl) {
+    throw new Error("Workflow not started yet. Please start and obtain resumeUrl first.");
+  }
+}
+
+async function postResume<T>(payload: unknown): Promise<T> {
+  ensureResumeUrl();
+  const url = `/api/resume?url=${encodeURIComponent(currentResumeUrl!)}`;
+  const data = await fetchJson<T>(url, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  // Optionally update resumeUrl if backend returns a new one
+  if ((data as any)?.resumeUrl && typeof (data as any).resumeUrl === "string") {
+    currentResumeUrl = (data as any).resumeUrl as string;
+  }
+  return data;
+}
+
 // Step 1
 export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{ ok: true; id: string }> {
+  // Start the workflow and capture resumeUrl
   try {
-    return await fetchJson(API_ENDPOINTS.STEP1_SUBMIT, {
+    const res = await fetchJson<{ resumeUrl: string; [k: string]: unknown }>("/api/start", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    if (!res.resumeUrl) throw new Error("Missing resumeUrl from start response");
+    currentResumeUrl = res.resumeUrl;
+    return { ok: true, id: "started" };
   } catch {
-    // Demo
+    // Demo fallback keeps app usable without backend
+    currentResumeUrl = "/dev/mock-resume";
     return { ok: true, id: "demo-lesson-details" };
   }
 }
@@ -50,7 +66,7 @@ export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{
 // Step 2
 export async function loadSongs(): Promise<Song[]> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP2_LOAD_SONGS, { method: "GET" });
+    return await postResume<Song[]>({ action: "loadSongs" });
   } catch {
     // Demo
     return [
@@ -90,10 +106,8 @@ export async function loadSongs(): Promise<Song[]> {
 
 export async function selectSong(songId: string): Promise<{ ok: true }> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP2_SELECT_SONG, {
-      method: "POST",
-      body: JSON.stringify({ songId }),
-    });
+    await postResume<{ ok: true }>({ action: "selectSong", songId });
+    return { ok: true };
   } catch {
     return { ok: true };
   }
@@ -102,7 +116,7 @@ export async function selectSong(songId: string): Promise<{ ok: true }> {
 // Step 3
 export async function loadActivities(): Promise<Activity[]> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP3_LOAD_ACTIVITIES, { method: "GET" });
+    return await postResume<Activity[]>({ action: "loadActivities" });
   } catch {
     return [
       {
@@ -141,10 +155,8 @@ export async function loadActivities(): Promise<Activity[]> {
 
 export async function selectActivities(payload: { warmupId: string; gameId?: string | null }): Promise<{ ok: true }> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP3_SELECT_ACTIVITIES, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    await postResume<{ ok: true }>({ action: "selectActivities", ...payload });
+    return { ok: true };
   } catch {
     return { ok: true };
   }
@@ -153,7 +165,7 @@ export async function selectActivities(payload: { warmupId: string; gameId?: str
 // Step 4
 export async function loadLessonPlans(): Promise<string> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP4_LOAD_PLANS, { method: "GET" });
+    return await postResume<string>({ action: "loadPlans" });
   } catch {
     // Demo text block representing a full term plan
     const lines: string[] = [];
@@ -174,10 +186,7 @@ export async function loadLessonPlans(): Promise<string> {
 
 export async function refineLessonPlans(request: { changes: string }): Promise<string> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP4_REFINE, {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
+    return await postResume<string>({ action: "refine", changes: request.changes });
   } catch {
     // Demo: echo the request atop the existing plan
     const base = await loadLessonPlans();
@@ -187,7 +196,8 @@ export async function refineLessonPlans(request: { changes: string }): Promise<s
 
 export async function approveLessonPlans(): Promise<{ ok: true }> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP4_APPROVE, { method: "POST" });
+    await postResume<{ ok: true }>({ action: "approve" });
+    return { ok: true };
   } catch {
     return { ok: true };
   }
@@ -196,7 +206,7 @@ export async function approveLessonPlans(): Promise<{ ok: true }> {
 // Step 5
 export async function getDownloads(): Promise<DownloadsPayload> {
   try {
-    return await fetchJson(API_ENDPOINTS.STEP5_GET_DOWNLOADS, { method: "GET" });
+    return await postResume<DownloadsPayload>({ action: "getDownloads" });
   } catch {
     return {
       status: "ready",
