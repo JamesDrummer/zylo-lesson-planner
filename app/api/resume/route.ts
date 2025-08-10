@@ -26,7 +26,6 @@ export async function POST(request: Request) {
     method: "POST",
     headers,
     body: streamBody ?? undefined,
-    // @ts-expect-error Node streaming option
     ...(streamBody ? { duplex: "half" } : {}),
     redirect: "manual",
   });
