@@ -10,6 +10,16 @@ export async function POST(request: Request) {
       headers: { "content-type": "application/json" },
     });
   }
+  // Validate absolute URL
+  try {
+    const parsed = new URL(resumeUrl);
+    if (!parsed.protocol || !parsed.host) throw new Error("Not absolute");
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid resumeUrl; must be absolute" }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
 
   const method = request.method;
   const contentType = request.headers.get("content-type") || undefined;
@@ -30,8 +40,13 @@ export async function POST(request: Request) {
     redirect: "manual",
   });
 
+  // Copy headers but drop encodings/lengths to avoid double-decompression issues in browsers
   const responseHeaders = new Headers();
-  upstreamResponse.headers.forEach((value, key) => responseHeaders.set(key, value));
+  upstreamResponse.headers.forEach((value, key) => {
+    const k = key.toLowerCase();
+    if (k === "content-encoding" || k === "transfer-encoding" || k === "content-length") return;
+    responseHeaders.set(key, value);
+  });
 
   return new Response(upstreamResponse.body, {
     status: upstreamResponse.status,

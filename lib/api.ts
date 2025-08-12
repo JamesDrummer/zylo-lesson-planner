@@ -66,9 +66,8 @@ export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{
     currentResumeUrl = res.resumeUrl;
     return { ok: true, id: "started" };
   } catch {
-    // Demo fallback keeps app usable without backend
-    currentResumeUrl = "/dev/mock-resume";
-    return { ok: true, id: "demo-lesson-details" };
+    // Surface error; do not fallback to a mock URL to avoid invalid resume fetches
+    throw new Error("Start failed: no resumeUrl returned");
   }
 }
 
