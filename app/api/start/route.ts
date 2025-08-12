@@ -17,15 +17,28 @@ export async function POST(request: Request) {
 
   const body = await request.text();
 
-  const upstreamResponse = await fetch(targetUrl, {
-    method: "POST",
-    headers,
-    body,
-    redirect: "manual",
-  });
+  let upstreamResponse: Response;
+  try {
+    upstreamResponse = await fetch(targetUrl, {
+      method: "POST",
+      headers,
+      body,
+      redirect: "manual",
+    });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Upstream fetch failed", message: (err as Error).message }),
+      {
+        status: 502,
+        headers: { "content-type": "application/json", "x-upstream-url": targetUrl },
+      }
+    );
+  }
 
   // Copy headers but drop encodings/lengths to avoid double-decompression issues in browsers
   const responseHeaders = new Headers();
+  responseHeaders.set("x-upstream-url", targetUrl);
+  responseHeaders.set("x-upstream-status", String(upstreamResponse.status));
   upstreamResponse.headers.forEach((value, key) => {
     const k = key.toLowerCase();
     if (k === "content-encoding" || k === "transfer-encoding" || k === "content-length") return;
