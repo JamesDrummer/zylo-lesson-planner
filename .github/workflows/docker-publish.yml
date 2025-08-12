@@ -44,4 +44,4 @@ jobs:
           # This creates the tag for your image. It dynamically uses your GitHub
           # username and repository name, so it's perfectly configured for you.
           # It will create: ghcr.io/jamesdrummer/zylo-lesson-planner:latest
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+          tags: ghcr.io/jamesdrummer/zylo-lesson-planner:latest
