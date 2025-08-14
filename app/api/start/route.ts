@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Read start webhook URL from environment; do not fallback to any hard-coded value
-const START_WEBHOOK_URL = process.env.N8N_START_WEBHOOK_URL;
+const START_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_START_WEBHOOK_URL;
   
 export async function POST(request: Request) {
   if (!START_WEBHOOK_URL) {
