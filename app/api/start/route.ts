@@ -3,8 +3,7 @@ export const dynamic = "force-dynamic";
 
 // Prefer a full start webhook URL if provided, otherwise fallback to a sensible default
 const START_WEBHOOK_URL =
-  process.env.N8N_START_WEBHOOK_URL ||
-  "https://myn8n.brightonhovedrumlessons.uk/webhook-test/0d06665c-e090-4cec-bef3-40f2a9263f92";
+  process.env.N8N_START_WEBHOOK_URL;
   
 export async function POST(request: Request) {
   const targetUrl = START_WEBHOOK_URL;
