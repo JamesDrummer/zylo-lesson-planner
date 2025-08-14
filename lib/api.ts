@@ -2,6 +2,7 @@ import type { Activity, DownloadsPayload, LessonDetailsForm, Song } from "@/type
 
 // Wait/Resume architecture: start once -> receive resumeUrl -> resume with JSON at each step
 let currentResumeUrl: string | null = null;
+let prefetchedSongs: Song[] | null = null;
 
 const DEFAULT_RETRY = { retries: 2, backoffMs: 500 } as const;
 
@@ -58,12 +59,18 @@ async function postResume<T>(payload: unknown): Promise<T> {
 export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{ ok: true; id: string }> {
   // Start the workflow and capture resumeUrl
   try {
-    const res = await fetchJson<{ resumeUrl: string; [k: string]: unknown }>("/api/start", {
+    const res = await fetchJson<{ resumeUrl: string; songs?: unknown }>("/api/start", {
       method: "POST",
       body: JSON.stringify(payload),
     });
     if (!res.resumeUrl) throw new Error("Missing resumeUrl from start response");
     currentResumeUrl = res.resumeUrl;
+    // Accept optional songs array in the initial start response to avoid an extra round trip
+    if (Array.isArray(res.songs)) {
+      prefetchedSongs = res.songs as Song[];
+    } else {
+      prefetchedSongs = null;
+    }
     return { ok: true, id: "started" };
   } catch {
     // Surface error; do not fallback to a mock URL to avoid invalid resume fetches
@@ -74,6 +81,7 @@ export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{
 // Step 2
 export async function loadSongs(): Promise<Song[]> {
   try {
+    if (prefetchedSongs) return prefetchedSongs;
     return await postResume<Song[]>({ action: "loadSongs" });
   } catch {
     // Demo
