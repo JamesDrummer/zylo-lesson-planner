@@ -17,6 +17,32 @@ export async function POST(request: Request) {
 
   const body = await request.text();
 
+  type NodeLikeError = Error & {
+    code?: string | number;
+    errno?: string | number;
+    syscall?: string;
+    address?: string;
+    port?: number;
+    cause?: unknown;
+  };
+
+  function serializeError(err: unknown) {
+    const e = err as NodeLikeError;
+    const cause = (e && typeof e === "object" && "cause" in e ? (e as { cause?: unknown }).cause : undefined) as
+      | (Error & { code?: string | number; errno?: string | number; syscall?: string; address?: string; port?: number })
+      | undefined;
+    return {
+      name: e?.name,
+      message: e?.message,
+      stack: e?.stack,
+      code: e?.code ?? (cause && (cause as { code?: unknown }).code),
+      errno: e?.errno ?? (cause && (cause as { errno?: unknown }).errno),
+      syscall: e?.syscall ?? (cause && (cause as { syscall?: unknown }).syscall),
+      address: e?.address ?? (cause && (cause as { address?: unknown }).address),
+      port: e?.port ?? (cause && (cause as { port?: unknown }).port),
+    };
+  }
+
   let upstreamResponse: Response;
   try {
     upstreamResponse = await fetch(targetUrl, {
@@ -26,6 +52,12 @@ export async function POST(request: Request) {
       redirect: "manual",
     });
   } catch (err) {
+    console.error("[/api/start] upstream fetch error", {
+      url: targetUrl,
+      runtime,
+      node: process.version,
+      error: serializeError(err),
+    });
     return new Response(
       JSON.stringify({ error: "Upstream fetch failed", message: (err as Error).message }),
       {
@@ -44,6 +76,24 @@ export async function POST(request: Request) {
     if (k === "content-encoding" || k === "transfer-encoding" || k === "content-length") return;
     responseHeaders.set(key, value);
   });
+
+  if (!upstreamResponse.ok) {
+    let errorBody = "";
+    try {
+      errorBody = await upstreamResponse.text();
+    } catch {
+      errorBody = "";
+    }
+    console.warn("[/api/start] upstream non-2xx response", {
+      url: targetUrl,
+      status: upstreamResponse.status,
+      bodyPreview: errorBody.slice(0, 2000),
+    });
+    return new Response(errorBody, {
+      status: upstreamResponse.status,
+      headers: responseHeaders,
+    });
+  }
 
   return new Response(upstreamResponse.body, {
     status: upstreamResponse.status,
