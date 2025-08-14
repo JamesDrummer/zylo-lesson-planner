@@ -3,6 +3,7 @@ import type { Activity, DownloadsPayload, LessonDetailsForm, Song } from "@/type
 // Wait/Resume architecture: start once -> receive resumeUrl -> resume with JSON at each step
 let currentResumeUrl: string | null = null;
 let prefetchedSongs: Song[] | null = null;
+let prefetchedActivities: Activity[] | null = null;
 
 const DEFAULT_RETRY = { retries: 2, backoffMs: 500 } as const;
 
@@ -163,7 +164,27 @@ export async function loadSongs(): Promise<Song[]> {
 
 export async function selectSong(songId: string): Promise<{ ok: true }> {
   try {
-    await postResume<{ ok: true }>({ action: "selectSong", songId });
+    const response = await postResume<{ ok: true; activities?: unknown }>({ action: "selectSong", songId });
+    // Accept optional activities array in the song selection response
+    if (Array.isArray(response.activities)) {
+      prefetchedActivities = response.activities as Activity[];
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("zylo_prefetchedActivities", JSON.stringify(prefetchedActivities));
+        }
+      } catch {
+        // ignore storage errors
+      }
+    } else {
+      prefetchedActivities = null;
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.removeItem("zylo_prefetchedActivities");
+        }
+      } catch {
+        // ignore
+      }
+    }
     return { ok: true };
   } catch {
     return { ok: true };
@@ -173,6 +194,22 @@ export async function selectSong(songId: string): Promise<{ ok: true }> {
 // Step 3
 export async function loadActivities(): Promise<Activity[]> {
   try {
+    if (prefetchedActivities) return prefetchedActivities;
+    // Try sessionStorage in case of a soft reload between steps
+    try {
+      if (typeof window !== "undefined") {
+        const raw = window.sessionStorage.getItem("zylo_prefetchedActivities");
+        if (raw) {
+          const parsed = JSON.parse(raw) as unknown;
+          if (Array.isArray(parsed)) {
+            prefetchedActivities = parsed as Activity[];
+            return prefetchedActivities;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
     return await postResume<Activity[]>({ action: "loadActivities" });
   } catch {
     return [
