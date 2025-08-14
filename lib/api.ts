@@ -6,6 +6,14 @@ let prefetchedSongs: Song[] | null = null;
 
 const DEFAULT_RETRY = { retries: 2, backoffMs: 500 } as const;
 
+class HttpError extends Error {
+  status: number;
+  constructor(status: number, message?: string) {
+    super(message ?? `HTTP ${status}`);
+    this.status = status;
+  }
+}
+
 async function fetchJson<T>(url: string, init?: RequestInit, retry = DEFAULT_RETRY): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retry.retries; attempt++) {
@@ -15,10 +23,14 @@ async function fetchJson<T>(url: string, init?: RequestInit, retry = DEFAULT_RET
         cache: "no-store",
         ...init,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new HttpError(res.status);
       return (await res.json()) as T;
     } catch (err) {
       lastError = err;
+      // Do not retry client errors (4xx)
+      if (err instanceof HttpError && err.status >= 400 && err.status < 500) {
+        break;
+      }
       if (attempt === retry.retries) break;
       await new Promise((r) => setTimeout(r, retry.backoffMs * (attempt + 1)));
     }
@@ -68,8 +80,22 @@ export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{
     // Accept optional songs array in the initial start response to avoid an extra round trip
     if (Array.isArray(res.songs)) {
       prefetchedSongs = res.songs as Song[];
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("zylo_prefetchedSongs", JSON.stringify(prefetchedSongs));
+        }
+      } catch {
+        // ignore storage errors
+      }
     } else {
       prefetchedSongs = null;
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.removeItem("zylo_prefetchedSongs");
+        }
+      } catch {
+        // ignore
+      }
     }
     return { ok: true, id: "started" };
   } catch {
@@ -82,6 +108,21 @@ export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{
 export async function loadSongs(): Promise<Song[]> {
   try {
     if (prefetchedSongs) return prefetchedSongs;
+    // Try sessionStorage in case of a soft reload between steps
+    try {
+      if (typeof window !== "undefined") {
+        const raw = window.sessionStorage.getItem("zylo_prefetchedSongs");
+        if (raw) {
+          const parsed = JSON.parse(raw) as unknown;
+          if (Array.isArray(parsed)) {
+            prefetchedSongs = parsed as Song[];
+            return prefetchedSongs;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
     return await postResume<Song[]>({ action: "loadSongs" });
   } catch {
     // Demo

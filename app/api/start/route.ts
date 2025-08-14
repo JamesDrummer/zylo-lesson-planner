@@ -108,4 +108,11 @@ export async function POST(request: Request) {
   });
 }
 
+export async function GET() {
+  return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+    status: 405,
+    headers: { "content-type": "application/json", Allow: "POST" },
+  });
+}
+
 
