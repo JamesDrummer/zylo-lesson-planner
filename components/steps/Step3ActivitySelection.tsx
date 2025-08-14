@@ -21,6 +21,7 @@ export default function Step3ActivitySelection({
   // Removed unused loading state to satisfy lint rules
   const [results, setResults] = useState<Activity[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -178,16 +179,19 @@ export default function Step3ActivitySelection({
         <button className="btn-outline" onClick={onBack}>Back</button>
         <button
           className="btn-primary"
-          disabled={!selectedWarmup}
+          disabled={!selectedWarmup || submitting}
           onClick={async () => {
+            if (submitting) return;
+            setSubmitting(true);
             try {
               await selectActivities({ warmupId: selectedWarmup!.id, gameId: selectedGame?.id });
               onNext();
             } finally {
+              // Don't reset submitting state since we're navigating away
             }
           }}
         >
-          Continue
+          {submitting ? "Submitting..." : "Continue"}
         </button>
       </div>
     </div>

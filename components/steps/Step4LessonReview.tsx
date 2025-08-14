@@ -19,6 +19,8 @@ export default function Step4LessonReview({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [changes, setChanges] = useState("");
+  const [refining, setRefining] = useState(false);
+  const [approving, setApproving] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -74,18 +76,20 @@ export default function Step4LessonReview({
               </button>
               <button
                 className="btn-secondary"
+                disabled={refining}
                 onClick={async () => {
-                  setLoading(true);
+                  if (refining) return;
+                  setRefining(true);
                   try {
                     const refined = await refineLessonPlans({ changes });
                     onChange(refined);
                     setChanges("");
                   } finally {
-                    setLoading(false);
+                    setRefining(false);
                   }
                 }}
               >
-                Request Changes
+                {refining ? "Refining..." : "Request Changes"}
               </button>
             </div>
           </div>
@@ -97,18 +101,19 @@ export default function Step4LessonReview({
         <div className="flex items-center gap-2">
           <button
             className="btn-primary"
+            disabled={!value || approving}
             onClick={async () => {
-              setLoading(true);
+              if (approving) return;
+              setApproving(true);
               try {
                 await approveLessonPlans();
                 onNext();
               } finally {
-                setLoading(false);
+                // Don't reset approving state since we're navigating away
               }
             }}
-            disabled={!value}
           >
-            Generate Final Materials
+            {approving ? "Generating..." : "Generate Final Materials"}
           </button>
         </div>
       </div>

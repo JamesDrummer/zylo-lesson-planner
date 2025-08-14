@@ -19,6 +19,7 @@ export default function Step2SongSelection({
   // Removed unused loading state to satisfy lint rules
   const [results, setResults] = useState<Song[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selecting, setSelecting] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -98,16 +99,20 @@ export default function Step2SongSelection({
               <div className="mt-4">
                 <button
                   className="btn-secondary w-full"
+                  disabled={selecting}
                   onClick={async () => {
+                    if (selecting) return;
+                    setSelecting(true);
                     onChange(song);
                     try {
                       await selectSong(song.id);
                       onNext();
                     } finally {
+                      // Don't reset selecting state since we're navigating away
                     }
                   }}
                 >
-                  Select This Song
+                  {selecting ? "Selecting..." : "Select This Song"}
                 </button>
               </div>
             </div>
