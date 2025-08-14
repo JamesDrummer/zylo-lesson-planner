@@ -1,19 +1,20 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Read start webhook URL from environment; do not fallback to any hard-coded value
-const START_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_START_WEBHOOK_URL;
-  
 export async function POST(request: Request) {
-  if (!START_WEBHOOK_URL) {
-    console.error("[/api/start] Missing env N8N_START_WEBHOOK_URL");
-    return new Response(JSON.stringify({ error: "Server misconfigured: N8N_START_WEBHOOK_URL not set" }), {
+  // Resolve at request-time to avoid any build-time env inlining
+  const resolvedEnvUrl =
+    process.env.NEXT_PUBLIC_N8N_START_WEBHOOK_URL || process.env.N8N_START_WEBHOOK_URL || "";
+
+  if (!resolvedEnvUrl) {
+    console.error("[/api/start] Missing env NEXT_PUBLIC_N8N_START_WEBHOOK_URL or N8N_START_WEBHOOK_URL");
+    return new Response(JSON.stringify({ error: "Server misconfigured: NEXT_PUBLIC_N8N_START_WEBHOOK_URL or N8N_START_WEBHOOK_URL not set" }), {
       status: 500,
       headers: { "content-type": "application/json" },
     });
   }
 
-  const targetUrl = START_WEBHOOK_URL;
+  const targetUrl = resolvedEnvUrl;
 
   const contentType = request.headers.get("content-type") || "application/json";
   const authorization = request.headers.get("authorization");
