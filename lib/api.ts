@@ -1,9 +1,10 @@
-import type { Activity, DownloadsPayload, LessonDetailsForm, Song } from "@/types";
+import type { Activity, DownloadsPayload, LessonDetailsForm, Song, ExecutionContext } from "@/types";
 
 // Wait/Resume architecture: start once -> receive resumeUrl -> resume with JSON at each step
 let currentResumeUrl: string | null = null;
 let prefetchedSongs: Song[] | null = null;
 let prefetchedActivities: Activity[] | null = null;
+let executionContext: ExecutionContext | null = null;
 
 const DEFAULT_RETRY = { retries: 2, backoffMs: 500 } as const;
 
@@ -72,12 +73,25 @@ async function postResume<T>(payload: unknown): Promise<T> {
 export async function submitLessonDetails(payload: LessonDetailsForm): Promise<{ ok: true; id: string }> {
   // Start the workflow and capture resumeUrl
   try {
-    const res = await fetchJson<{ resumeUrl: string; songs?: unknown }>("/api/start", {
+    const res = await fetchJson<{ resumeUrl: string; songs?: unknown; executionContext?: unknown }>("/api/start", {
       method: "POST",
       body: JSON.stringify(payload),
     });
     if (!res.resumeUrl) throw new Error("Missing resumeUrl from start response");
     currentResumeUrl = res.resumeUrl;
+    
+    // Store execution context if provided
+    if (res.executionContext && typeof res.executionContext === "object") {
+      executionContext = res.executionContext as ExecutionContext;
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("zylo_executionContext", JSON.stringify(executionContext));
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+    
     // Accept optional songs array in the initial start response to avoid an extra round trip
     if (Array.isArray(res.songs)) {
       prefetchedSongs = res.songs as Song[];
@@ -118,6 +132,14 @@ export async function loadSongs(): Promise<Song[]> {
           if (Array.isArray(parsed)) {
             prefetchedSongs = parsed as Song[];
             return prefetchedSongs;
+          }
+        }
+        // Also try to restore execution context
+        const contextRaw = window.sessionStorage.getItem("zylo_executionContext");
+        if (contextRaw && !executionContext) {
+          const contextParsed = JSON.parse(contextRaw) as unknown;
+          if (typeof contextParsed === "object" && contextParsed !== null) {
+            executionContext = contextParsed as ExecutionContext;
           }
         }
       }
@@ -164,7 +186,20 @@ export async function loadSongs(): Promise<Song[]> {
 
 export async function selectSong(songId: string): Promise<{ ok: true }> {
   try {
-    const response = await postResume<{ ok: true; activities?: unknown }>({ action: "selectSong", songId });
+    // Find the selected song from prefetched songs
+    const selectedSong = prefetchedSongs?.find(s => s.id === songId);
+    if (!selectedSong) {
+      throw new Error("Selected song not found");
+    }
+    
+    const payload: { action: string; songId: string; selectedSong?: Song; executionContext?: ExecutionContext } = {
+      action: "selectSong",
+      songId,
+      selectedSong,
+      executionContext: executionContext || undefined
+    };
+    
+    const response = await postResume<{ ok: true; activities?: unknown }>(payload);
     // Accept optional activities array in the song selection response
     if (Array.isArray(response.activities)) {
       prefetchedActivities = response.activities as Activity[];
@@ -249,7 +284,11 @@ export async function loadActivities(): Promise<Activity[]> {
 
 export async function selectActivities(payload: { selectedWarmup: Activity; selectedGame?: Activity | null }): Promise<{ ok: true }> {
   try {
-    await postResume<{ ok: true }>({ action: "selectActivities", ...payload });
+    await postResume<{ ok: true }>({ 
+      action: "selectActivities", 
+      ...payload,
+      executionContext: executionContext || undefined
+    });
     return { ok: true };
   } catch {
     return { ok: true };
@@ -259,7 +298,10 @@ export async function selectActivities(payload: { selectedWarmup: Activity; sele
 // Step 4
 export async function loadLessonPlans(): Promise<string> {
   try {
-    return await postResume<string>({ action: "loadPlans" });
+    return await postResume<string>({ 
+      action: "loadPlans",
+      executionContext: executionContext || undefined
+    });
   } catch {
     // Demo text block representing a full term plan
     const lines: string[] = [];
@@ -280,7 +322,11 @@ export async function loadLessonPlans(): Promise<string> {
 
 export async function refineLessonPlans(request: { changes: string }): Promise<string> {
   try {
-    return await postResume<string>({ action: "refine", changes: request.changes });
+    return await postResume<string>({ 
+      action: "refine", 
+      changes: request.changes,
+      executionContext: executionContext || undefined
+    });
   } catch {
     // Demo: echo the request atop the existing plan
     const base = await loadLessonPlans();
@@ -290,7 +336,10 @@ export async function refineLessonPlans(request: { changes: string }): Promise<s
 
 export async function approveLessonPlans(): Promise<{ ok: true }> {
   try {
-    await postResume<{ ok: true }>({ action: "approve" });
+    await postResume<{ ok: true }>({ 
+      action: "approve",
+      executionContext: executionContext || undefined
+    });
     return { ok: true };
   } catch {
     return { ok: true };
@@ -300,7 +349,10 @@ export async function approveLessonPlans(): Promise<{ ok: true }> {
 // Step 5
 export async function getDownloads(): Promise<DownloadsPayload> {
   try {
-    return await postResume<DownloadsPayload>({ action: "getDownloads" });
+    return await postResume<DownloadsPayload>({ 
+      action: "getDownloads",
+      executionContext: executionContext || undefined
+    });
   } catch {
     return {
       status: "ready",

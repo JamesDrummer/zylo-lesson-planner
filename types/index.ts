@@ -28,6 +28,19 @@ export interface Song {
   version: string;
   difficulty: DifficultyLevel;
   concepts: string[]; // tags
+  notionId?: string;
+  worksheet?: string;
+  backingTrack?: string;
+  isPupilFavourite?: boolean;
+}
+
+export interface ExecutionContext {
+  userConcepts: string[];
+  firstLessonDate: string;
+  numberOfLessons: number;
+  skipDates: string[];
+  originalFormData: LessonDetailsForm;
+  timestamp: string;
 }
 
 export interface Activity {
