@@ -184,7 +184,7 @@ export default function Step3ActivitySelection({
             if (submitting) return;
             setSubmitting(true);
             try {
-              await selectActivities({ warmupId: selectedWarmup!.id, gameId: selectedGame?.id });
+              await selectActivities({ selectedWarmup: selectedWarmup!, selectedGame: selectedGame });
               onNext();
             } finally {
               // Don't reset submitting state since we're navigating away

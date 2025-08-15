@@ -247,7 +247,7 @@ export async function loadActivities(): Promise<Activity[]> {
   }
 }
 
-export async function selectActivities(payload: { warmupId: string; gameId?: string | null }): Promise<{ ok: true }> {
+export async function selectActivities(payload: { selectedWarmup: Activity; selectedGame?: Activity | null }): Promise<{ ok: true }> {
   try {
     await postResume<{ ok: true }>({ action: "selectActivities", ...payload });
     return { ok: true };
