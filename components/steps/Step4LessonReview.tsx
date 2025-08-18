@@ -27,8 +27,27 @@ export default function Step4LessonReview({
   // resume calls only happen on user actions (refine/approve).
   const hasRequestedRef = useRef(false);
   useEffect(() => {
-    if (hasRequestedRef.current || value) return;
+    if (value) return;
+
+    // Prevent duplicate upstream calls across Strict Mode remounts by
+    // persisting a guard flag in sessionStorage.
+    let alreadyRequested = false;
+    try {
+      if (typeof window !== "undefined") {
+        alreadyRequested = window.sessionStorage.getItem("zylo_planRequested_v1") === "1";
+      }
+    } catch {
+      // ignore storage access errors
+    }
+    if (hasRequestedRef.current || alreadyRequested) return;
     hasRequestedRef.current = true;
+    try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("zylo_planRequested_v1", "1");
+      }
+    } catch {
+      // ignore
+    }
     const run = async () => {
       setLoading(true);
       setError(null);

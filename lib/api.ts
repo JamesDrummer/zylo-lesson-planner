@@ -5,6 +5,10 @@ let currentResumeUrl: string | null = null;
 let prefetchedSongs: Song[] | null = null;
 let prefetchedActivities: Activity[] | null = null;
 let executionContext: ExecutionContext | null = null;
+// Step 4 caching/guards
+let cachedLessonPlan: string | null = null;
+let hasRequestedLessonPlanOnce = false;
+let suppressResumeUntilUserAction = false;
 
 const DEFAULT_RETRY = { retries: 2, backoffMs: 500 } as const;
 
@@ -57,8 +61,18 @@ function hasResumeUrl(value: unknown): value is ResumeResponseWithUrl {
   );
 }
 
-async function postResume<T>(payload: unknown): Promise<T> {
+type ResumeCallOptions = { intent?: "auto" | "user" };
+
+async function postResume<T>(payload: unknown, options?: ResumeCallOptions): Promise<T> {
   ensureResumeUrl();
+  const intent = options?.intent ?? "auto";
+  if (suppressResumeUntilUserAction && intent !== "user") {
+    // If we have a cached plan and the caller was trying to reload it, return the cache.
+    if (typeof payload === "object" && payload !== null && (payload as { action?: string }).action === "loadPlans" && cachedLessonPlan) {
+      return cachedLessonPlan as unknown as T;
+    }
+    throw new Error("Resume suppressed until user action");
+  }
   const url = `/api/resume?url=${encodeURIComponent(currentResumeUrl!)}`;
   const data = await fetchJson<T>(url, {
     method: "POST",
@@ -319,10 +333,17 @@ export async function selectActivities(payload: { selectedWarmup: Activity; sele
 // Step 4
 export async function loadLessonPlans(): Promise<string> {
   try {
-    return await postResume<string>({ 
+    if (cachedLessonPlan) return cachedLessonPlan;
+    if (hasRequestedLessonPlanOnce && cachedLessonPlan) return cachedLessonPlan;
+    hasRequestedLessonPlanOnce = true;
+    const plan = await postResume<string>({ 
       action: "loadPlans",
       executionContext: executionContext || undefined
     });
+    cachedLessonPlan = plan;
+    // After we have a plan, hold further resume calls until the user acts explicitly
+    suppressResumeUntilUserAction = true;
+    return plan;
   } catch {
     // Demo text block representing a full term plan
     const lines: string[] = [];
@@ -337,21 +358,27 @@ export async function loadLessonPlans(): Promise<string> {
       lines.push(i % 2 === 0 ? "Game: Tempo Change Game (10m)" : "Game: —");
       lines.push("Homework: Practice clapping rhythms for 5 mins/day\n");
     }
-    return lines.join("\n");
+    const demo = lines.join("\n");
+    cachedLessonPlan = demo;
+    return demo;
   }
 }
 
 export async function refineLessonPlans(request: { changes: string }): Promise<string> {
   try {
-    return await postResume<string>({ 
+    const refined = await postResume<string>({ 
       action: "refine", 
       changes: request.changes,
       executionContext: executionContext || undefined
-    });
+    }, { intent: "user" });
+    cachedLessonPlan = refined;
+    return refined;
   } catch {
     // Demo: echo the request atop the existing plan
     const base = await loadLessonPlans();
-    return [`REQUESTED CHANGES: ${request.changes}`, "", base].join("\n");
+    const refined = [`REQUESTED CHANGES: ${request.changes}`, "", base].join("\n");
+    cachedLessonPlan = refined;
+    return refined;
   }
 }
 
@@ -360,7 +387,9 @@ export async function approveLessonPlans(): Promise<{ ok: true }> {
     await postResume<{ ok: true }>({ 
       action: "approve",
       executionContext: executionContext || undefined
-    });
+    }, { intent: "user" });
+    // Allow subsequent calls (e.g., getDownloads) after explicit approval
+    suppressResumeUntilUserAction = false;
     return { ok: true };
   } catch {
     return { ok: true };
@@ -373,7 +402,7 @@ export async function getDownloads(): Promise<DownloadsPayload> {
     return await postResume<DownloadsPayload>({ 
       action: "getDownloads",
       executionContext: executionContext || undefined
-    });
+    }, { intent: "user" });
   } catch {
     return {
       status: "ready",
