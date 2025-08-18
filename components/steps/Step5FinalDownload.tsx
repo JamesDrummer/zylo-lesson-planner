@@ -35,7 +35,7 @@ export default function Step5FinalDownload({ onBack, onRestart }: { onBack: () =
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-blue">Final Download</h2>
+        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-pink">Final Download</h2>
         <p className="text-sm text-zylo-gray mt-1">Download your completed materials.</p>
       </div>
 

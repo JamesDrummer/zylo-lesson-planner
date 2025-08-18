@@ -15,6 +15,7 @@ export default function StepIndicator({
 }) {
   return (
     <nav aria-label="Progress" className="sticky top-2 z-10">
+      <div className="zylo-accent-bar mb-3" />
       <ol className="flex flex-col sm:flex-row gap-4 sm:gap-6">
         {steps.map((step, idx) => {
           const stepIndex = idx + 1;
@@ -23,7 +24,7 @@ export default function StepIndicator({
           const baseCircle = isComplete
             ? "bg-zylo-green text-white"
             : isCurrent
-            ? "bg-zylo-blue text-white animate-pulse"
+            ? "bg-zylo-pink text-white animate-pulse"
             : "bg-white text-zylo-gray";
 
           return (
@@ -43,7 +44,7 @@ export default function StepIndicator({
                     <p
                       className={`text-sm font-medium truncate ${
                         isCurrent
-                          ? "text-zylo-blue"
+                          ? "text-zylo-pink"
                           : isComplete
                           ? "text-zylo-green"
                           : "text-zylo-gray"
@@ -57,7 +58,7 @@ export default function StepIndicator({
                           isComplete
                             ? "bg-zylo-green w-full"
                             : isCurrent
-                            ? "bg-zylo-blue w-2/3"
+                            ? "bg-zylo-pink w-2/3"
                             : "bg-transparent w-0"
                         }`}
                       />

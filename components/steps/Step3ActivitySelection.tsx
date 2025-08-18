@@ -53,7 +53,7 @@ export default function Step3ActivitySelection({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-blue">Activity Selection</h2>
+        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-pink">Activity Selection</h2>
         <p className="text-sm text-zylo-gray mt-1">Search and choose activities to reinforce concepts.</p>
       </div>
 
@@ -80,8 +80,8 @@ export default function Step3ActivitySelection({
               return (
                 <div
                   key={act.id}
-                  className={`rounded-2xl glass p-4 shadow-sm transition ${
-                    isSelected ? "border-zylo-green" : "border-black/10"
+                  className={`rounded-2xl glass p-4 shadow-sm ring-1 ring-black/10 transition ${
+                    isSelected ? "outline outline-zylo-green" : ""
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -93,7 +93,7 @@ export default function Step3ActivitySelection({
                       act.relevance === "Perfect"
                         ? "bg-zylo-green text-white"
                         : act.relevance === "Great"
-                        ? "bg-zylo-blue text-white"
+                        ? "bg-zylo-pink text-white"
                         : "bg-zylo-yellow"
                     }`}>{act.relevance} Match</span>
                   </div>
@@ -128,8 +128,8 @@ export default function Step3ActivitySelection({
               return (
                 <div
                   key={act.id}
-                  className={`rounded-2xl glass p-4 shadow-sm transition ${
-                    isSelected ? "border-zylo-green" : "border-black/10"
+                  className={`rounded-2xl glass p-4 shadow-sm ring-1 ring-black/10 transition ${
+                    isSelected ? "outline outline-zylo-green" : ""
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -141,7 +141,7 @@ export default function Step3ActivitySelection({
                       act.relevance === "Perfect"
                         ? "bg-zylo-green text-white"
                         : act.relevance === "Great"
-                        ? "bg-zylo-blue text-white"
+                        ? "bg-zylo-pink text-white"
                         : "bg-zylo-yellow"
                     }`}>{act.relevance} Match</span>
                   </div>

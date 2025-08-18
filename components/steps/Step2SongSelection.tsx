@@ -49,7 +49,7 @@ export default function Step2SongSelection({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-blue">Song Selection</h2>
+        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-pink">Song Selection</h2>
         <p className="text-sm text-zylo-gray mt-1">Search and pick songs for your lesson.</p>
       </div>
 
@@ -73,8 +73,8 @@ export default function Step2SongSelection({
           return (
             <div
               key={song.id}
-              className={`rounded-2xl glass p-4 shadow-sm transition-transform hover:-translate-y-0.5 ${
-                isSelected ? "border-zylo-pink" : "border-black/10"
+              className={`rounded-2xl glass p-4 shadow-sm ring-1 ring-black/10 transition-transform hover:-translate-y-0.5 ${
+                isSelected ? "outline outline-zylo-pink" : ""
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -85,9 +85,9 @@ export default function Step2SongSelection({
                 <span className="text-xs px-2 py-1 rounded-full bg-zylo-blue text-white shadow-sm">{song.bpm} BPM</span>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="px-2 py-1 rounded-full bg-black/5">{song.genre}</span>
-                <span className="px-2 py-1 rounded-full bg-black/5">{song.version}</span>
-                <span className="px-2 py-1 rounded-full bg-black/5">Difficulty {song.difficulty}</span>
+                <span className="px-2 py-1 rounded-full bg-black/5 text-black">{song.genre}</span>
+                <span className="px-2 py-1 rounded-full bg-black/5 text-black">{song.version}</span>
+                <span className="px-2 py-1 rounded-full bg-black/5 text-black">Difficulty {song.difficulty}</span>
               </div>
               <div className="mt-3 flex flex-wrap gap-1">
                 {song.concepts.map((c) => (

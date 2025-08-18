@@ -47,7 +47,7 @@ export default function Home() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <header className="text-center">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zylo-blue">
+        <h1 className="display text-3xl sm:text-4xl md:text-5xl font-bold text-zylo-pink drop-shadow-[0_2px_0_rgba(0,0,0,0.08)]">
           Zylo Lesson Planner
         </h1>
         <p className="mt-2 text-sm sm:text-base text-zylo-gray">

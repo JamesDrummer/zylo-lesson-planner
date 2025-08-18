@@ -4,18 +4,19 @@
   --background: #ffffff;
   --foreground: #171717;
   /* Zylo Brand Colors */
-  --zylo-pink: #E91E63;
-  --zylo-green: #4CAF50;
-  --zylo-blue: #2196F3;
-  --zylo-yellow: #FFC107;
-  --zylo-gray: #666666;
+  --zylo-pink: #e91e63; /* hot pink accent used in CTAs */
+  --zylo-green: #4caf50; /* success/complete */
+  --zylo-blue: #2196f3; /* link/primary */
+  --zylo-yellow: #ffc107; /* playful tag bg */
+  --zylo-gray: #5a6a73; /* slightly softer copy color */
+  --zylo-purple: #a64cf4; /* hero band color on site */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-zylo-sans);
+  --font-display: var(--font-zylo-display);
 
   /* Expose Zylo brand colors to Tailwind color utilities */
   --color-zylo-pink: var(--zylo-pink);
@@ -23,6 +24,7 @@
   --color-zylo-blue: var(--zylo-blue);
   --color-zylo-yellow: var(--zylo-yellow);
   --color-zylo-gray: var(--zylo-gray);
+  --color-zylo-purple: var(--zylo-purple);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,7 +38,12 @@ body {
   /* Use background-color so gradient backgrounds from Tailwind are not overridden */
   background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display), var(--font-sans), serif;
+  letter-spacing: 0.02em;
 }
 
 /* Fun, playful UI helpers (plain CSS so it works even if Tailwind isn't processing) */
@@ -63,9 +70,9 @@ body {
   line-height: 1;
   transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
 }
-.btn-primary { background: var(--zylo-blue); color: #fff; box-shadow: 0 2px 6px rgba(33,150,243,.25); }
+.btn-primary { background: var(--zylo-pink); color: #fff; box-shadow: 0 2px 6px rgba(233,30,99,.25); }
 .btn-primary:hover { background: color-mix(in srgb, var(--zylo-blue) 90%, #000); }
-.btn-secondary { background: var(--zylo-pink); color: #fff; box-shadow: 0 2px 6px rgba(233,30,99,.25); }
+.btn-secondary { background: var(--zylo-blue); color: #fff; box-shadow: 0 2px 6px rgba(33,150,243,.25); }
 .btn-secondary:hover { background: color-mix(in srgb, var(--zylo-pink) 90%, #000); }
 .btn-outline { background: transparent; color: var(--zylo-gray); border: 1px solid color-mix(in srgb, var(--zylo-gray) 30%, #fff); }
 .btn-outline:hover { background: rgba(0,0,0,0.05); }
@@ -78,3 +85,27 @@ body {
 }
 .input:focus, .textarea:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--zylo-blue) 25%, transparent); }
 .textarea { min-height: 120px; }
+
+/* Step indicator accent bar similar to site tabs */
+.zylo-accent-bar {
+  height: 6px;
+  background: linear-gradient(90deg, var(--zylo-purple), var(--zylo-pink));
+  border-radius: 9999px;
+}
+
+/* Ensure readable text on light surfaces */
+.glass,
+.card,
+.bg-white,
+.prose,
+.surface-light {
+  color: #111;
+}
+
+/* Tailwind-generated light greys used as chips/backgrounds */
+.bg-black\/5,
+.bg-black\/10,
+.bg-white\/80,
+.bg-white\/90 {
+  color: #111;
+}

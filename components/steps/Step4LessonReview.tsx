@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { approveLessonPlans, loadLessonPlans, refineLessonPlans } from "@/lib/api";
@@ -22,9 +22,14 @@ export default function Step4LessonReview({
   const [refining, setRefining] = useState(false);
   const [approving, setApproving] = useState(false);
 
+  // Guard against React Strict Mode double-invocation and ensure
+  // we only call the resume URL once to generate the plan. Further
+  // resume calls only happen on user actions (refine/approve).
+  const hasRequestedRef = useRef(false);
   useEffect(() => {
+    if (hasRequestedRef.current || value) return;
+    hasRequestedRef.current = true;
     const run = async () => {
-      if (value) return; // already generated
       setLoading(true);
       setError(null);
       try {
@@ -43,7 +48,7 @@ export default function Step4LessonReview({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-blue">Lesson Plan Review</h2>
+        <h2 className="text-xl sm:text-2xl font-semibold text-zylo-pink">Lesson Plan Review</h2>
         <p className="text-sm text-zylo-gray mt-1">Review the generated lesson plan before downloading.</p>
       </div>
 
@@ -59,7 +64,7 @@ export default function Step4LessonReview({
             </div>
           </div>
           <div className="glass rounded-2xl p-4">
-            <h3 className="font-semibold text-zylo-blue mb-2">Request Changes</h3>
+            <h3 className="font-semibold text-zylo-pink mb-2">Request Changes</h3>
             <textarea
               className="textarea"
               rows={16}
