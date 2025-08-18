@@ -146,7 +146,10 @@ export async function loadSongs(): Promise<Song[]> {
     } catch {
       // ignore
     }
-    return await postResume<Song[]>({ action: "loadSongs" });
+    return await postResume<Song[]>({ 
+      action: "loadSongs",
+      executionContext: executionContext || undefined
+    });
   } catch {
     // Demo
     return [
@@ -190,6 +193,21 @@ export async function selectSong(songId: string): Promise<{ ok: true }> {
     const selectedSong = prefetchedSongs?.find(s => s.id === songId);
     if (!selectedSong) {
       throw new Error("Selected song not found");
+    }
+    
+    // Update execution context with selected song information
+    if (executionContext) {
+      executionContext.selectedSong = selectedSong;
+      executionContext.songSelectionTimestamp = new Date().toISOString();
+      
+      // Update session storage with new execution context
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("zylo_executionContext", JSON.stringify(executionContext));
+        }
+      } catch {
+        // ignore storage errors
+      }
     }
     
     const payload: { action: string; songId: string; selectedSong?: Song; executionContext?: ExecutionContext } = {
@@ -245,7 +263,10 @@ export async function loadActivities(): Promise<Activity[]> {
     } catch {
       // ignore
     }
-    return await postResume<Activity[]>({ action: "loadActivities" });
+    return await postResume<Activity[]>({ 
+      action: "loadActivities",
+      executionContext: executionContext || undefined
+    });
   } catch {
     return [
       {

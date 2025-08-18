@@ -41,6 +41,8 @@ export interface ExecutionContext {
   skipDates: string[];
   originalFormData: LessonDetailsForm;
   timestamp: string;
+  selectedSong?: Song;
+  songSelectionTimestamp?: string;
 }
 
 export interface Activity {
