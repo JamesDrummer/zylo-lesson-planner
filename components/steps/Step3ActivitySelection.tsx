@@ -47,8 +47,19 @@ export default function Step3ActivitySelection({
     );
   }, [query, results]);
 
-  const warmups = filtered.filter((a) => a.category === "Warmup").slice(0, 4);
-  const games = filtered.filter((a) => a.category === "Game").slice(0, 4);
+  // Sort by match quality: Perfect > Great > Good
+  const relevanceScore: Record<string, number> = { Perfect: 3, Great: 2, Good: 1 };
+  const byRelevanceDesc = (a: Activity, b: Activity) =>
+    (relevanceScore[b.relevance] ?? 0) - (relevanceScore[a.relevance] ?? 0);
+
+  const warmups = filtered
+    .filter((a) => a.category === "Warmup")
+    .sort(byRelevanceDesc)
+    .slice(0, 5);
+  const games = filtered
+    .filter((a) => a.category === "Game")
+    .sort(byRelevanceDesc)
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -80,8 +91,12 @@ export default function Step3ActivitySelection({
               return (
                 <div
                   key={act.id}
-                  className={`rounded-2xl glass p-4 shadow-sm ring-1 ring-black/10 transition ${
-                    isSelected ? "outline outline-zylo-green" : ""
+                  role="button"
+                  aria-selected={isSelected}
+                  className={`rounded-2xl glass p-4 shadow-sm relative overflow-visible transition z-10 hover:z-50 ${
+                    isSelected
+                      ? "bg-zylo-green/10 ring-2 ring-zylo-green"
+                      : "ring-1 ring-black/10 hover:ring-zylo-blue/30"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -97,20 +112,37 @@ export default function Step3ActivitySelection({
                         : "bg-zylo-yellow"
                     }`}>{act.relevance} Match</span>
                   </div>
-                  <p className="mt-2 text-sm line-clamp-3">{act.instructions}</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {act.concepts.map((c) => (
-                      <span key={c} className="text-[11px] px-2 py-1 rounded-full bg-zylo-yellow/20 text-zylo-gray">
-                        {c}
-                      </span>
-                    ))}
+                  <div className="mt-2 relative inline-block group">
+                    <span className="text-xs px-2 py-1 rounded-full bg-black/5 text-black">Instructions</span>
+                    <div className="pointer-events-none absolute left-0 mt-2 w-80 max-w-[90vw] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-[999]">
+                      <div className="rounded-xl shadow-lg ring-1 ring-black/10 bg-white p-3">
+                        <p className="text-sm leading-snug whitespace-pre-wrap">{act.instructions}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 relative inline-block group">
+                    <span className="text-xs px-2 py-1 rounded-full bg-black/5 text-black">
+                      {act.concepts.length} concepts
+                    </span>
+                    <div className="pointer-events-none absolute left-0 mt-2 w-64 max-w-[80vw] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-[999]">
+                      <div className="rounded-xl shadow-lg ring-1 ring-black/10 bg-white p-3">
+                        <div className="grid grid-cols-2 gap-1">
+                          {act.concepts.map((c) => (
+                            <span key={c} className="text-[11px] px-2 py-1 rounded-full bg-zylo-yellow/20 text-zylo-gray truncate">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-3">
                     <button
-                      className="btn-secondary w-full"
+                      className={`${isSelected ? "btn-primary" : "btn-secondary"} w-full`}
+                      disabled={isSelected}
                       onClick={() => onChange({ warmup: act, game: selectedGame })}
                     >
-                      Select This Activity
+                      {isSelected ? "Selected" : "Select This Activity"}
                     </button>
                   </div>
                 </div>
@@ -128,8 +160,12 @@ export default function Step3ActivitySelection({
               return (
                 <div
                   key={act.id}
-                  className={`rounded-2xl glass p-4 shadow-sm ring-1 ring-black/10 transition ${
-                    isSelected ? "outline outline-zylo-green" : ""
+                  role="button"
+                  aria-selected={isSelected}
+                  className={`rounded-2xl glass p-4 shadow-sm relative overflow-visible transition z-10 hover:z-50 ${
+                    isSelected
+                      ? "bg-zylo-green/10 ring-2 ring-zylo-green"
+                      : "ring-1 ring-black/10 hover:ring-zylo-blue/30"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -145,23 +181,40 @@ export default function Step3ActivitySelection({
                         : "bg-zylo-yellow"
                     }`}>{act.relevance} Match</span>
                   </div>
-                  <p className="mt-2 text-sm line-clamp-3">{act.instructions}</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {act.concepts.map((c) => (
-                      <span key={c} className="text-[11px] px-2 py-1 rounded-full bg-zylo-yellow/20 text-zylo-gray">
-                        {c}
-                      </span>
-                    ))}
+                  <div className="mt-2 relative inline-block group">
+                    <span className="text-xs px-2 py-1 rounded-full bg-black/5 text-black">Instructions</span>
+                    <div className="pointer-events-none absolute left-0 mt-2 w-80 max-w-[90vw] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-[999]">
+                      <div className="rounded-xl shadow-lg ring-1 ring-black/10 bg-white p-3">
+                        <p className="text-sm leading-snug whitespace-pre-wrap">{act.instructions}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 relative inline-block group">
+                    <span className="text-xs px-2 py-1 rounded-full bg-black/5 text-black">
+                      {act.concepts.length} concepts
+                    </span>
+                    <div className="pointer-events-none absolute left-0 mt-2 w-64 max-w-[80vw] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-[999]">
+                      <div className="rounded-xl shadow-lg ring-1 ring-black/10 bg-white p-3">
+                        <div className="grid grid-cols-2 gap-1">
+                          {act.concepts.map((c) => (
+                            <span key={c} className="text-[11px] px-2 py-1 rounded-full bg-zylo-yellow/20 text-zylo-gray truncate">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-3 flex gap-2">
                     <button
-                      className="btn-secondary flex-1"
+                      className={`${isSelected ? "btn-primary" : "btn-secondary"} flex-1`}
+                      disabled={isSelected}
                       onClick={() => onChange({ warmup: selectedWarmup, game: act })}
                     >
-                      Select This Activity
+                      {isSelected ? "Selected" : "Select This Activity"}
                     </button>
                     <button
-                      className="btn-outline"
+                      className={`btn-outline ${selectedGame === null ? "ring-zylo-green" : ""}`}
                       onClick={() => onChange({ warmup: selectedWarmup, game: null })}
                     >
                       No Game
